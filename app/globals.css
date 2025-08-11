@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #FF8400;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --font-sans: var(--font-montserrat), var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Utility helpers tied to brand color */
+.brand-text { color: var(--primary); }
+.brand-bg { background-color: var(--primary); }
+.brand-border { border-color: var(--primary); }
+
+/* Basic layout helpers */
+.container-responsive {
+  @apply w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.card {
+  @apply bg-white dark:bg-neutral-900 rounded-xl border border-black/5 dark:border-white/10 shadow-sm;
+}
+
+.card-padding {
+  @apply p-4 sm:p-6;
+}
