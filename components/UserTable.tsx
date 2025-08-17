@@ -1,6 +1,7 @@
 "use client";
 import Badge from "@/components/Badge";
 import { Eye, Pencil, Trash2, UserX } from "lucide-react";
+import UserDetailPanel from "@/components/UserDetailPanel";
 import { useEffect, useRef, useState } from "react";
 
 type Row = {
@@ -17,6 +18,7 @@ type Row = {
 export default function UserTable({ rows }: { rows: Row[] }) {
   const [openForEmail, setOpenForEmail] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [detailEmail, setDetailEmail] = useState<string | null>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -70,7 +72,12 @@ export default function UserTable({ rows }: { rows: Row[] }) {
                 <td className="px-4 py-3 text-black dark:text-white">{r.lastActive}</td>
                 <td className="px-4 py-3">
                   <div className="relative flex items-center gap-4 text-black/70 dark:text-white/70">
-                    <button aria-label="View" title="View" className="hover:text-[var(--primary)] transition-colors">
+                    <button
+                      aria-label="View"
+                      title="View"
+                      className="hover:text-[var(--primary)] transition-colors"
+                      onClick={() => setDetailEmail(r.email)}
+                    >
                       <Eye size={18} />
                     </button>
                     <button
@@ -108,6 +115,9 @@ export default function UserTable({ rows }: { rows: Row[] }) {
           </tbody>
         </table>
       </div>
+      {detailEmail && (
+        <UserDetailPanel email={detailEmail} onClose={() => setDetailEmail(null)} />
+      )}
     </div>
   );
 }

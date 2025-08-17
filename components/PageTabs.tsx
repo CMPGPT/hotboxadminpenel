@@ -14,7 +14,7 @@ const tabs: TabItem[] = [
   { href: "/dashboard", label: "Analytics", Icon: BarChart3 },
   { href: "/revenue", label: "Revenue & Users", Icon: LineChart },
   { href: "/users", label: "User Management", Icon: Users },
-  { href: "/reports", label: "Reports", Icon: FileWarning },
+  // { href: "/reports", label: "Reports", Icon: FileWarning }, // temporarily hidden per request
 ];
 
 export default function PageTabs() {

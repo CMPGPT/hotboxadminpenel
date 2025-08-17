@@ -1,10 +1,50 @@
 "use client";
 import { Mail, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getFirebaseAuth, isEmailAdmin } from "@/lib/firebase";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 export default function LoginPage() {
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user?.email) {
+        const allowed = await isEmailAdmin(user.email);
+        if (allowed) {
+          router.replace("/dashboard");
+        } else {
+          await signOut(auth);
+        }
+      }
+    });
+    return () => unsub();
+  }, [router]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO: Integrate Supabase auth. For now this is a UI-only form.
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+      const allowed = await isEmailAdmin(email);
+      if (!allowed) {
+        await signOut(getFirebaseAuth());
+        setError("This account is not an admin");
+        return;
+      }
+      router.replace("/dashboard");
+    } catch (err) {
+      setError("Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -32,6 +72,8 @@ export default function LoginPage() {
                   type="email"
                   required
                   placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50 pl-10 pr-3 py-2 outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 />
               </div>
@@ -49,16 +91,23 @@ export default function LoginPage() {
                   type="password"
                   required
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50 pl-10 pr-3 py-2 outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 />
               </div>
             </div>
 
+            {error ? (
+              <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
+            ) : null}
+
             <button
               type="submit"
-              className="w-full mt-2 rounded-lg brand-bg text-white py-2 font-medium hover:opacity-95 active:opacity-90"
+              disabled={loading}
+              className="w-full mt-2 rounded-lg brand-bg text-white py-2 font-medium hover:opacity-95 active:opacity-90 disabled:opacity-60"
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
         </div>

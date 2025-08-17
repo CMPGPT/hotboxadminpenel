@@ -1,40 +1,74 @@
 "use client";
 import AppShell from "@/components/AppShell";
+import RequireAuth from "@/components/RequireAuth";
 import { StatCard } from "@/components/StatCard";
 import PlanBreakdown from "@/components/PlanBreakdown";
 import ActivityList from "@/components/ActivityList";
+import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<{ totalProducts: number; newProducts7d: number; newUsers7d: number; newSubscriptions7d: number } | null>(null);
+  const [plans, setPlans] = useState<{ total: number; items: { name: string; count: number }[] } | null>(null);
+  const [activity, setActivity] = useState<{ items: { title: string; time: string; iconColor: string }[] } | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/dashboard/overview");
+        const json = await res.json();
+        if (!ignore) {
+          if (res.ok) setStats(json);
+          else setError(json?.error || "Failed to load dashboard");
+        }
+      } catch {
+        if (!ignore) setError("Failed to load dashboard");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+      try {
+        const r2 = await fetch("/api/dashboard/plans");
+        const j2 = await r2.json();
+        if (!ignore && r2.ok) setPlans(j2);
+      } catch {}
+      try {
+        const r3 = await fetch("/api/dashboard/activity");
+        const j3 = await r3.json();
+        if (!ignore && r3.ok) setActivity(j3);
+      } catch {}
+    })();
+    return () => { ignore = true; };
+  }, []);
+
   return (
-    <AppShell>
-      <div className="space-y-6">
+    <RequireAuth>
+      <AppShell>
+        <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard title="Total Products Added" value={1247} sublabel="This month" growthLabel="+23%" />
-          <StatCard title="Buy Now Clicks" value={15824} sublabel="Click-through rate: 12.3%" growthLabel="+18%" />
-          <StatCard title="Seller Subscriptions" value={892} sublabel="Active seller plans" growthLabel="+15%" />
-          <StatCard title="Buyer Subscriptions" value={2156} sublabel="Active buyer plans" growthLabel="+8%" />
+          <StatCard title="New Subscriptions (7d)" value={stats?.newSubscriptions7d ?? (loading ? 0 : 0)} sublabel="Activated in last 7 days" />
+          <StatCard title="New Users (7d)" value={stats?.newUsers7d ?? (loading ? 0 : 0)} sublabel="Created in last 7 days" />
+          <StatCard title="Total Products" value={stats?.totalProducts ?? (loading ? 0 : 0)} sublabel="All-time catalog size" />
+          <StatCard title="New Products (7d)" value={stats?.newProducts7d ?? (loading ? 0 : 0)} sublabel="Added in last 7 days" />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <PlanBreakdown
-            plans={[
-              { name: "Basic Seller", value: 324, color: "#FF8400", percent: "10.6%" },
-              { name: "Pro Seller", value: 412, color: "#10b981", percent: "13.5%" },
-              { name: "Enterprise Seller", value: 156, color: "#f59e0b", percent: "5.1%" },
-              { name: "Buyer Premium", value: 1203, color: "#3b82f6", percent: "39.5%" },
-              { name: "Buyer Standard", value: 953, color: "#e5e7eb", percent: "31.3%" },
-            ]}
+            plans={(plans?.items || []).map((p, idx) => ({
+              name: p.name,
+              value: p.count,
+              color: ["#FF8400", "#10b981", "#f59e0b", "#3b82f6", "#94a3b8"][idx % 5],
+              percent: plans && plans.total > 0 ? `${((p.count / plans.total) * 100).toFixed(1)}%` : "0%",
+            }))}
           />
-          <ActivityList
-            items={[
-              { iconColor: "#10b981", title: "New product listing created", time: "2 min ago" },
-              { iconColor: "#f59e0b", title: "User upgraded to Pro plan", time: "5 min ago" },
-              { iconColor: "#3b82f6", title: "Report submitted", time: "12 min ago" },
-            ]}
-          />
+          <ActivityList items={activity?.items || []} />
         </div>
-      </div>
-    </AppShell>
+        </div>
+      </AppShell>
+    </RequireAuth>
   );
 }
 

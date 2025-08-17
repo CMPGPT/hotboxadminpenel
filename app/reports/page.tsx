@@ -1,6 +1,7 @@
 "use client";
 import AppShell from "@/components/AppShell";
 import ReportsTable from "@/components/ReportsTable";
+import RequireAuth from "@/components/RequireAuth";
 
 export default function ReportsPage() {
   const rows = [
@@ -12,7 +13,8 @@ export default function ReportsPage() {
   ];
 
   return (
-    <AppShell>
+    <RequireAuth>
+      <AppShell>
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="card card-padding"><div className="text-sm text-black/60 dark:text-white/60">Total Reports</div><div className="text-3xl font-semibold mt-1">5</div></div>
@@ -98,7 +100,8 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+      </AppShell>
+    </RequireAuth>
   );
 }
 

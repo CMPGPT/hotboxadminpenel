@@ -4,45 +4,95 @@ import { StatCard } from "@/components/StatCard";
 import BreakdownBarList from "@/components/BreakdownBarList";
 import UserSegments from "@/components/UserSegments";
 import QuickRevenueActions from "@/components/QuickRevenueActions";
+import RequireAuth from "@/components/RequireAuth";
+import { useEffect, useMemo, useState } from "react";
+
+function formatCurrencyCents(cents: number) {
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format((cents || 0) / 100);
+}
 
 export default function RevenuePage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<null | {
+    totalMonthlyRevenueCents: number;
+    activeSubscriptions: number;
+    arpuCents: number;
+    breakdown: { key: string; label: string; amountCents: number; percent: number; color: string }[];
+    segments: { wholesalers: number; retailers: number; paidBuyers: number; others: number; paidUsers: number; basicUsers: number };
+  }>(null);
+
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/revenue/overview");
+        const json = await res.json();
+        if (res.ok && !ignore) setData(json);
+        else if (!ignore) setError(json?.error || "Failed to load revenue");
+      } catch {
+        if (!ignore) setError("Failed to load revenue");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const breakdownItems = useMemo(() => {
+    if (!data) return [] as { label: string; amount: string; percent: string; color: string; progress: number }[];
+    return data.breakdown.map((b) => ({
+      label: `${b.label}`,
+      amount: formatCurrencyCents(b.amountCents),
+      percent: `${b.percent.toFixed(1)}%`,
+      color: b.color,
+      progress: b.percent,
+    }));
+  }, [data]);
+
   return (
-    <AppShell>
+    <RequireAuth>
+      <AppShell>
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard title="Total Monthly Revenue" value="$29,925" sublabel="From all subscriptions and transactions" growthLabel="+24%" />
-          <StatCard title="Total Active Users" value={4530} sublabel="Currently active on platform" growthLabel="+12%" />
-          <StatCard title="Average Revenue Per User" value="$14.28" sublabel="Monthly ARPU" growthLabel="+8%" />
-          <StatCard title="User Growth Rate" value="15.3%" sublabel="Month over month" growthLabel="+3.2%" />
+          <StatCard title="Total Monthly Revenue" value={data ? formatCurrencyCents(data.totalMonthlyRevenueCents) : (loading ? "…" : "$0.00")} sublabel="From active subscriptions" />
+          <StatCard title="Active Subscriptions" value={data ? data.activeSubscriptions : (loading ? 0 : 0)} sublabel="Count of active subs" />
+          <StatCard title="Average Revenue Per User" value={data ? formatCurrencyCents(data.arpuCents) : (loading ? "…" : "$0.00")} sublabel="Monthly ARPU" />
+          <StatCard title="Data Status" value={loading ? "Loading" : (error ? "Error" : "Up-to-date")} sublabel={error || "Subscription dataset"} />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <BreakdownBarList
             title="Revenue Breakdown"
-            subtitle="Monthly revenue sources and distribution"
-            items={[
-              { label: "Bulk Seller ($49.99)", amount: "$7,799", percent: "45.2%", color: "#FF8400", progress: 45 },
-              { label: "Retailer ($29.99)", amount: "$9,716", percent: "35.6%", color: "#10b981", progress: 36 },
-              { label: "Buyer ($9.99)", amount: "$12,020", percent: "17.8%", color: "#f59e0b", progress: 18 },
-              { label: "Premium Features", amount: "$390", percent: "1.4%", color: "#3b82f6", progress: 2 },
-            ]}
+            subtitle="Monthly revenue sources (wholesaler, retailer, paid buyer, other)"
+            items={breakdownItems}
           />
 
           <UserSegments
-            title="User Segments"
-            subtitle="Breakdown of active user categories"
+            title="Subscription Segments"
+            subtitle="Active subscribers by category and user base split"
             segments={[
-              { label: "Bulk Sellers", value: 156, growth: "+18%", color: "#FF8400" },
-              { label: "Retailers", value: 324, growth: "+15%", color: "#10b981" },
-              { label: "Paid Buyers", value: 1203, growth: "+22%", color: "#f59e0b" },
-              { label: "Free Users", value: 2847, growth: "+8%", color: "#3b82f6" },
+              { label: "Wholesalers", value: data?.segments.wholesalers || 0, growth: "", color: "#FF8400" },
+              { label: "Retailers", value: data?.segments.retailers || 0, growth: "", color: "#10b981" },
+              { label: "Paid Buyers", value: data?.segments.paidBuyers || 0, growth: "", color: "#f59e0b" },
+              { label: "Other", value: data?.segments.others || 0, growth: "", color: "#3b82f6" },
+              { label: "Paid Users (unique)", value: data?.segments.paidUsers || 0, growth: "", color: "#8b5cf6" },
+              { label: "Basic Users", value: data?.segments.basicUsers || 0, growth: "", color: "#94a3b8" },
             ]}
           />
         </div>
 
         <QuickRevenueActions />
+        {error ? (
+          <div className="card card-padding text-red-600 dark:text-red-400">{error}</div>
+        ) : null}
       </div>
-    </AppShell>
+      </AppShell>
+    </RequireAuth>
   );
 }
 
