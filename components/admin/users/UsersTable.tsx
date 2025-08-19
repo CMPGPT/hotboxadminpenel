@@ -2,7 +2,8 @@
 import Badge from "@/components/Badge";
 import { Eye, UserX, Trash2, Copy } from "lucide-react";
 import UserDetailPanel from "@/components/UserDetailPanel";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import Image from "next/image";
 
 type User = {
   uid: string;
@@ -175,11 +176,12 @@ export default function UsersTable({ users, loading = false, onSuspendUserAction
                             {getInitials(user)}
                           </span>
                           {user.photoURL ? (
-                            <img
+                            <Image
                               src={user.photoURL}
                               alt={`${user.displayName || user.email || "User"} avatar`}
-                              className="absolute inset-0 h-8 w-8 rounded-full object-cover"
-                              loading="lazy"
+                              fill
+                              sizes="32px"
+                              className="absolute inset-0 rounded-full object-cover"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).style.display = 'none';
                               }}

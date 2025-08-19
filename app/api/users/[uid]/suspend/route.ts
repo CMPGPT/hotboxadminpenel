@@ -51,14 +51,6 @@ export async function POST(request: Request, ctx: { params: Promise<{ uid: strin
   try {
     const actor = await requireAdmin(request);
     
-    // Debug logging to understand actor email issue
-    console.log('DEBUG: Actor info from JWT token:', {
-      uid: actor.uid,
-      email: actor.email,
-      tokenEmail: actor.token.email,
-      tokenSub: actor.token.sub
-    });
-    
     const { uid } = await ctx.params;
     if (!uid || typeof uid !== "string") throw new HttpError(400, "Path param :uid is required");
 

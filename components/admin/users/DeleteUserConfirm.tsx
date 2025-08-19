@@ -132,7 +132,7 @@ export default function DeleteUserConfirm({
           {/* Confirmation Input */}
           <div>
             <label className="block text-sm font-medium text-black dark:text-white mb-2">
-              Type the user's email or UID to confirm deletion:
+              Type the user&apos;s email or UID to confirm deletion:
             </label>
             <input
               type="text"
@@ -144,7 +144,7 @@ export default function DeleteUserConfirm({
             />
             {confirmText && !isConfirmValid && (
               <div className="text-red-600 dark:text-red-400 text-xs mt-1">
-                Text does not match the user's email or UID
+                Text does not match the user&apos;s email or UID
               </div>
             )}
           </div>

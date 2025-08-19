@@ -24,7 +24,7 @@ export function json(data: unknown, status = 200) {
   });
 }
 
-function extractBearerToken(request: Request): string | null {
+async function extractBearerToken(request: Request): Promise<string | null> {
   const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
     return authHeader.substring(7);
@@ -32,7 +32,7 @@ function extractBearerToken(request: Request): string | null {
   const altHeader = request.headers.get("x-firebase-id-token");
   if (altHeader) return altHeader;
   try {
-    const jar = cookies();
+    const jar = await cookies();
     const session = jar.get("__session")?.value;
     if (session) return session;
   } catch (_) {}
@@ -47,7 +47,7 @@ async function isEmailAdmin(email?: string | null): Promise<boolean> {
 }
 
 export async function requireAdmin(request: Request): Promise<Actor> {
-  const tokenStr = extractBearerToken(request);
+  const tokenStr = await extractBearerToken(request);
   if (!tokenStr) throw new HttpError(401, "Missing Bearer token");
   let decoded: DecodedIdToken;
   try {

@@ -116,10 +116,8 @@ export default function UserTable({ rows }: { rows: Row[] }) {
         </table>
       </div>
       {detailEmail && (
-        <UserDetailPanel email={detailEmail} onClose={() => setDetailEmail(null)} />
+        <UserDetailPanel email={detailEmail} onCloseAction={() => setDetailEmail(null)} />
       )}
     </div>
   );
 }
-
-

@@ -7,7 +7,7 @@ import SuspendUserModal from "@/components/admin/users/SuspendUserModal";
 import DeleteUserConfirm from "@/components/admin/users/DeleteUserConfirm";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, X } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 type User = {
@@ -36,6 +36,15 @@ type FilterType = {
   subscription: 'all' | 'free' | 'wholesaler' | 'retailer';
 };
 
+// Local type matching SuspendedUsersTable expectation
+type SuspendedUserLite = {
+  uid: string;
+  email: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+  suspension: NonNullable<User['suspension']>;
+};
+
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -51,7 +60,7 @@ export default function UsersPage() {
   const [deleteModalUser, setDeleteModalUser] = useState<User | null>(null);
 
   // Fetch users with TanStack Query
-  const { data: users = [], isLoading, error } = useQuery({
+  const { data: users = [], isLoading, error } = useQuery<User[]>({
     queryKey: ['users'],
     queryFn: async () => {
       const res = await fetch("/api/users/list");
@@ -99,9 +108,6 @@ export default function UsersPage() {
       const { getIdToken } = await import("@/lib/firebase/auth");
       const token = await getIdToken();
       
-      // Debug: Log token payload to understand actor email issue
-      console.log('Frontend: Sending suspend request with token');
-      
       const response = await fetch(`/api/users/${uid}/suspend`, {
         method: "POST",
         headers: {
@@ -114,11 +120,11 @@ export default function UsersPage() {
       if (!response.ok) throw new Error(data.error || "Failed to suspend user");
       return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       // Force refresh to ensure UI reflects the suspended state
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.refetchQueries({ queryKey: ['users'] });
-      toast.success(`User ${variables.uid} suspended successfully`);
+      toast.success('User suspended successfully');
       setSuspendModalUser(null);
     },
     onError: (error: Error) => {
@@ -240,8 +246,9 @@ export default function UsersPage() {
     unsuspendMutation.mutate(uid);
   };
 
-  const handleEditSuspension = (user: any) => {
-    setSuspendModalUser(user);
+  const handleEditSuspension = (user: SuspendedUserLite) => {
+    // The incoming object is a suspended user; it also includes the remaining fields from User at runtime.
+    setSuspendModalUser(user as unknown as User);
   };
 
   return (

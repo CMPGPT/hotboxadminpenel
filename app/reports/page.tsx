@@ -49,7 +49,7 @@ export default function ReportsPage() {
               </div>
               <div className="border-t border-black/10 dark:border-white/10 p-3 text-sm">
                 <div className="font-medium mb-1">Harassment</div>
-                <p className="text-black/70 dark:text-white/70">User posting aggressive comments about competitor products in Talk N' Toke</p>
+                <p className="text-black/70 dark:text-white/70">User posting aggressive comments about competitor products in Talk N&apos; Toke</p>
                 <div className="mt-2 grid grid-cols-2">
                   <span className="text-black/60 dark:text-white/60">Reporter: hemp_buyer_23</span>
                   <span className="text-black/60 dark:text-white/60">Reported: kratom_seller_89</span>
