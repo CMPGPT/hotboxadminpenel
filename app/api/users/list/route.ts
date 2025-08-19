@@ -6,6 +6,7 @@ type ListResponse = {
     uid: string;
     email: string | null;
     displayName: string | null;
+    photoURL?: string | null;
     disabled: boolean;
     creationTime: string | null;
     lastSignInTime: string | null;
@@ -13,6 +14,13 @@ type ListResponse = {
     admin: boolean;
     userType?: string | null;
     sellerType?: string | null;
+    suspension?: {
+      active: boolean;
+      reason: string;
+      restrictions: string[];
+      loungeIds: string[];
+      channel?: string;
+    };
   }>;
   nextPageToken?: string;
 };
@@ -70,11 +78,32 @@ export async function GET(request: Request) {
 
         const userType = (userDoc?.userType as string | undefined) ?? null;
         const sellerType = (userDoc?.sellerType as string | undefined) ?? null;
+        const photoURL: string | null = (() => {
+          let fsUrl: string | undefined;
+          const a: any = userDoc ?? {};
+          if (typeof a.photoURL === 'string' && a.photoURL.trim().length > 0) {
+            fsUrl = a.photoURL;
+          } else if (typeof a.photoUrl === 'string' && a.photoUrl.trim().length > 0) {
+            fsUrl = a.photoUrl;
+          }
+          if (typeof fsUrl === 'string' && fsUrl.trim().length > 0) return fsUrl;
+          return u.photoURL ?? null;
+        })();
+        
+        // Extract suspension data
+        const suspension = userDoc?.suspension ? {
+          active: Boolean(userDoc.suspension.active),
+          reason: String(userDoc.suspension.reason || ''),
+          restrictions: Array.isArray(userDoc.suspension.restrictions) ? userDoc.suspension.restrictions : [],
+          loungeIds: Array.isArray(userDoc.suspension.loungeIds) ? userDoc.suspension.loungeIds : [],
+          channel: typeof userDoc.suspension.channel === 'string' ? userDoc.suspension.channel : ''
+        } : undefined;
 
         return {
           uid: u.uid,
           email: u.email ?? null,
           displayName: u.displayName ?? null,
+          photoURL,
           disabled: u.disabled === true,
           creationTime: u.metadata?.creationTime ?? null,
           lastSignInTime: u.metadata?.lastSignInTime ?? null,
@@ -82,6 +111,7 @@ export async function GET(request: Request) {
           admin: isAdmin,
           userType,
           sellerType,
+          suspension,
         };
       })
     );

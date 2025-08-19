@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export default function UserDetailPanel({ email, onClose }: { email: string; onClose: () => void }) {
+export default function UserDetailPanel({ email, onCloseAction }: { email: string; onCloseAction: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{ id: string; data: Record<string, unknown>; auth?: Record<string, unknown> } | null>(null);
-  const [actionLoading, setActionLoading] = useState<"block" | "delete" | null>(null);
+  const [actionLoading, setActionLoading] = useState<"delete" | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -30,19 +30,6 @@ export default function UserDetailPanel({ email, onClose }: { email: string; onC
     };
   }, [email]);
 
-  async function handleBlock() {
-    if (!data?.auth || typeof data.auth.uid !== "string") return;
-    setActionLoading("block");
-    try {
-      const res = await fetch("/api/users/block", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ uid: data.auth.uid, reason: "Manual suspension from admin panel" }) });
-      if (!res.ok) throw new Error();
-      onClose();
-    } catch {
-      // keep panel open; could show toast
-    } finally {
-      setActionLoading(null);
-    }
-  }
 
   async function handleDelete() {
     if (!data?.auth || typeof data.auth.uid !== "string") return;
@@ -50,7 +37,7 @@ export default function UserDetailPanel({ email, onClose }: { email: string; onC
     try {
       const res = await fetch("/api/users/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ uid: data.auth.uid }) });
       if (!res.ok) throw new Error();
-      onClose();
+      onCloseAction();
     } catch {
       // keep panel open; could show toast
     } finally {
@@ -60,12 +47,12 @@ export default function UserDetailPanel({ email, onClose }: { email: string; onC
 
   return (
     <div className="fixed inset-0 z-50">
-      <button aria-label="Close overlay" onClick={onClose} className="absolute inset-0 bg-black/70" />
+      <button aria-label="Close overlay" onClick={onCloseAction} className="absolute inset-0 bg-black/70" />
       <div className="relative z-10 min-h-full flex items-center justify-center p-4">
         <div className="w-full max-w-3xl max-h-[85vh] overflow-auto rounded-xl bg-white dark:bg-neutral-900 shadow-xl border border-black/10 dark:border-white/10">
           <div className="card-padding bg-black/5 dark:bg-white/5 flex items-center justify-between sticky top-0 z-10">
             <div className="font-semibold">User details</div>
-            <button onClick={onClose} className="text-sm">Close</button>
+            <button onClick={onCloseAction} className="text-sm">Close</button>
           </div>
           <div className="card-padding">
             {loading ? (
@@ -98,11 +85,6 @@ export default function UserDetailPanel({ email, onClose }: { email: string; onC
             ) : null}
           </div>
           <div className="card-padding border-t border-black/10 dark:border-white/10 flex items-center justify-end gap-3 sticky bottom-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-            <button
-              className="rounded-lg border px-3 py-2"
-              disabled={actionLoading !== null}
-              onClick={handleBlock}
-            >{actionLoading === "block" ? "Blocking..." : "Block user"}</button>
             <button
               className="rounded-lg bg-red-600 text-white px-3 py-2"
               disabled={actionLoading !== null}
